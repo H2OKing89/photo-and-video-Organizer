@@ -1,7 +1,3 @@
-Certainly! Below is a comprehensive `README.md` file tailored for your **Photo and Video Organizer** project. This documentation will help you and others understand the purpose, setup, usage, and structure of the project.
-
----
-
 # Photo and Video Organizer
 
 A Python-based program to organize your photos and videos locally by extracting metadata, handling duplicates, and structuring files into organized directories.
@@ -198,9 +194,3 @@ Contributions are welcome! Please open an issue or submit a pull request for any
 [MIT License](LICENSE)
 
 ## Contact
-
-For any questions or support, please contact [Quentin](mailto:quentin@example.com).
-
----
-
-Feel free to customize this `README.md` further to fit any additional specifics or preferences you might have. Let me know if you need any more assistance!
