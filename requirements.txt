@@ -1,7 +1,6 @@
-pillow
-exifread
-geopy
-imagehash
+PyQt6
+psutil
 pymediainfo
-moviepy
-tqdm
+imagehash
+Pillow
+geopy

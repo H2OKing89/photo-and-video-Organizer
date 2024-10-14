@@ -1,28 +1,29 @@
+# modules/metadata_extractor.py
+
 """
 metadata_extractor.py
 
-This module handles the extraction of metadata from image and video files.
-For images, it extracts EXIF data such as timestamps and GPS information.
-For videos, it extracts metadata like recording dates.
+This module handles the extraction of metadata from media files, such as images. It
+extracts information like timestamps and GPS data which are used for organizing files.
 
 Functions:
-- extract_image_metadata(image_path): Extracts EXIF metadata from an image.
-- extract_video_metadata(video_path): Extracts metadata from a video file.
+- extract_image_metadata(image_path, settings): Extracts metadata from an image file.
 """
 
-from PIL import Image, ExifTags
-from pymediainfo import MediaInfo
 import logging
+from PIL import Image, ExifTags
 
-def extract_image_metadata(image_path):
+
+def extract_image_metadata(image_path, settings):
     """
-    Extracts metadata from an image file.
+    Extracts metadata from an image file, including timestamp and GPS data.
 
     Parameters:
     - image_path (str): Path to the image file.
+    - settings (dict): User-defined settings.
 
     Returns:
-    - dict: A dictionary containing extracted metadata (timestamp, GPS data).
+    - dict or None: Dictionary containing metadata or None if extraction fails.
     """
     metadata = {}
     try:
@@ -35,41 +36,18 @@ def extract_image_metadata(image_path):
                 metadata[tag_name] = value
 
         # Get timestamp
-        metadata['timestamp'] = metadata.get('DateTimeOriginal')
+        metadata['timestamp'] = metadata.get('DateTimeOriginal') or metadata.get('DateTime')
 
         # Get GPS data
         gps_info = metadata.get('GPSInfo')
         if gps_info:
-            gps_data = {ExifTags.GPSTAGS.get(t, t): gps_info[t] for t in gps_info}
+            gps_data = {}
+            for key in gps_info.keys():
+                decode = ExifTags.GPSTAGS.get(key, key)
+                gps_data[decode] = gps_info[key]
             metadata['gps'] = gps_data
 
         return metadata
     except Exception as e:
         logging.error(f"Error extracting metadata from {image_path}: {e}")
-        return None
-
-def extract_video_metadata(video_path):
-    """
-    Extracts metadata from a video file.
-
-    Parameters:
-    - video_path (str): Path to the video file.
-
-    Returns:
-    - dict: A dictionary containing extracted metadata (timestamp).
-    """
-    metadata = {}
-    try:
-        media_info = MediaInfo.parse(video_path)
-        for track in media_info.tracks:
-            if track.track_type == 'General':
-                # Extracting the earliest available date
-                metadata['timestamp'] = (
-                    track.recorded_date or 
-                    track.tagged_date or 
-                    track.encoded_date
-                )
-        return metadata
-    except Exception as e:
-        logging.error(f"Error extracting metadata from {video_path}: {e}")
         return None
