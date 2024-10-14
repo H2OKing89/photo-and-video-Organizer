@@ -1,0 +1,7 @@
+pillow
+exifread
+geopy
+imagehash
+pymediainfo
+moviepy
+tqdm
