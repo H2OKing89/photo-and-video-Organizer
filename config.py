@@ -1,19 +1,10 @@
 # config.py
 
-"""
-config.py
-
-Configuration settings module for the Photo and Video Organizer program. It allows for
-easy adjustments of parameters without modifying the core code. Settings can be loaded
-from or saved to a configuration file or managed using QSettings within the GUI.
-
-Functions:
-- load_settings(): Loads settings from QSettings.
-- save_settings(settings): Saves settings to QSettings.
-"""
-
 from PyQt6.QtCore import QSettings
 import os
+from dotenv import load_dotenv
+
+load_dotenv()  # Load environment variables from .env
 
 def load_settings():
     """
@@ -36,7 +27,9 @@ def load_settings():
         'include_png': settings.value('include_png', True, type=bool),
         'include_mp4': settings.value('include_mp4', True, type=bool),
         'include_mov': settings.value('include_mov', True, type=bool),
-        'naming_convention': settings.value('naming_convention', 'Date_Location')
+        'include_heic': settings.value('include_heic', False, type=bool),
+        'naming_convention': settings.value('naming_convention', 'Date_Location'),
+        'google_maps_api_key': os.getenv('GOOGLE_MAPS_API_KEY')  # Add API key to config
     }
     return config
 
@@ -59,4 +52,5 @@ def save_settings(settings_dict):
     config_settings.setValue('include_png', settings_dict.get('include_png', True))
     config_settings.setValue('include_mp4', settings_dict.get('include_mp4', True))
     config_settings.setValue('include_mov', settings_dict.get('include_mov', True))
+    config_settings.setValue('include_heic', settings_dict.get('include_heic', False))
     config_settings.setValue('naming_convention', settings_dict.get('naming_convention', 'Date_Location'))

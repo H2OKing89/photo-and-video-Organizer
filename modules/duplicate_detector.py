@@ -1,20 +1,14 @@
-"""
-duplicate_detector.py
-
-This module handles the detection and management of duplicate media files. It provides
-functions to identify duplicates using different hashing methods and to handle them
-according to user preferences.
-
-Functions:
-- is_duplicate(file_path, processed_hashes, settings): Determines if a file is a duplicate.
-- handle_duplicate(file_path, trash_dir, settings): Handles duplicate files by moving them to trash.
-"""
+# duplicate_detector.py
 
 import os
 import hashlib
 import imagehash
 from PIL import Image
-import logging  # Importing logging module
+import logging
+import pillow_heif  # Ensure HEIC support is registered
+
+# Register HEIC opener with Pillow for handling HEIC files
+pillow_heif.register_heif_opener()
 
 def compute_md5(file_path):
     """
@@ -67,6 +61,11 @@ def is_duplicate(file_path, processed_hashes, settings):
     - bool: True if duplicate, False otherwise.
     """
     duplicate_method = settings.get('duplicate_method', 'MD5 Hash')
+    
+    # Ensure that .heic files can be processed for hashing
+    if file_path.lower().endswith('.heic'):
+        logging.info(f"Processing duplicate detection for HEIC file: {file_path}")
+
     if duplicate_method == 'MD5 Hash':
         file_hash = compute_md5(file_path)
     elif duplicate_method == 'Perceptual Hash':

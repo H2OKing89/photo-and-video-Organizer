@@ -16,6 +16,9 @@ from PyQt6.QtGui import QTextCursor
 
 from main import organize_media
 from modules.logger import setup_logging  # Import the setup_logging function
+from modules.utils import get_default_pictures_folder, get_default_output_folder, get_default_trash_folder
+
+import os
 
 # WorkerThread class to handle the organization process in a separate thread
 class WorkerThread(QThread):
@@ -105,7 +108,7 @@ class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Settings/Preferences")
-        self.settings = self.parent().settings  # Access main settings
+        self.settings = QSettings("YourCompany", "PhotoOrganizer")  # Access main settings
 
         layout = QFormLayout()
 
@@ -124,12 +127,16 @@ class SettingsDialog(QDialog):
         self.include_mp4.setChecked(self.settings.value('include_mp4', True, type=bool))
         self.include_mov = QCheckBox("Include MOV")
         self.include_mov.setChecked(self.settings.value('include_mov', True, type=bool))
-        # Add more file types as needed
+        self.include_heic = QCheckBox("Include HEIC")
+        self.include_heic.setChecked(self.settings.value('include_heic', False, type=bool))  # Default to False
+
+        # Add to file types layout
         file_types_layout = QVBoxLayout()
         file_types_layout.addWidget(self.include_jpg)
         file_types_layout.addWidget(self.include_png)
         file_types_layout.addWidget(self.include_mp4)
         file_types_layout.addWidget(self.include_mov)
+        file_types_layout.addWidget(self.include_heic)
         layout.addRow("Include File Types:", file_types_layout)
 
         # Naming Convention
@@ -155,6 +162,7 @@ class SettingsDialog(QDialog):
         self.settings.setValue('include_png', self.include_png.isChecked())
         self.settings.setValue('include_mp4', self.include_mp4.isChecked())
         self.settings.setValue('include_mov', self.include_mov.isChecked())
+        self.settings.setValue('include_heic', self.include_heic.isChecked())  # Save HEIC preference
         self.settings.setValue('naming_convention', self.naming_convention_combo.currentText())
         self.accept()
 
@@ -383,27 +391,27 @@ class PhotoOrganizerGUI(QWidget):
         Loads the input, output, and trash directories from QSettings.
         If not set, initializes them with default directories.
         """
-        input_dir = self.settings.value("input_directory")
-        output_dir = self.settings.value("output_directory")
-        trash_dir = self.settings.value("trash_directory")
+        input_dir = self.settings.value("input_dir")
+        output_dir = self.settings.value("output_dir")
+        trash_dir = self.settings.value("trash_dir")
 
         # If directories are not set, use default directories
         if not input_dir:
             input_dir = get_default_pictures_folder()
-            self.settings.setValue("input_directory", input_dir)
+            self.settings.setValue("input_dir", input_dir)
             self.log_text_edit.append(f"Default Input Directory set to: {input_dir}")
             logging.info(f"Default Input Directory set to: {input_dir}")
 
         if not output_dir:
             output_dir = get_default_output_folder()
-            self.settings.setValue("output_directory", output_dir)
+            self.settings.setValue("output_dir", output_dir)
             os.makedirs(output_dir, exist_ok=True)
             self.log_text_edit.append(f"Default Output Directory created at: {output_dir}")
             logging.info(f"Default Output Directory created at: {output_dir}")
 
         if not trash_dir:
             trash_dir = get_default_trash_folder()
-            self.settings.setValue("trash_directory", trash_dir)
+            self.settings.setValue("trash_dir", trash_dir)
             os.makedirs(trash_dir, exist_ok=True)
             self.log_text_edit.append(f"Default Trash Directory created at: {trash_dir}")
             logging.info(f"Default Trash Directory created at: {trash_dir}")
@@ -421,7 +429,7 @@ class PhotoOrganizerGUI(QWidget):
         directory = QFileDialog.getExistingDirectory(self, "Select Input Directory", default_dir, QFileDialog.Option.ShowDirsOnly)
         if directory:
             self.input_line_edit.setText(directory)
-            self.settings.setValue("input_directory", directory)
+            self.settings.setValue("input_dir", directory)
             logging.info(f"Input Directory set to: {directory}")
             self.log_text_edit.append(f"Input Directory set to: {directory}")
 
@@ -433,7 +441,7 @@ class PhotoOrganizerGUI(QWidget):
         directory = QFileDialog.getExistingDirectory(self, "Select Output Directory", default_dir, QFileDialog.Option.ShowDirsOnly)
         if directory:
             self.output_line_edit.setText(directory)
-            self.settings.setValue("output_directory", directory)
+            self.settings.setValue("output_dir", directory)
             logging.info(f"Output Directory set to: {directory}")
             self.log_text_edit.append(f"Output Directory set to: {directory}")
 
@@ -445,7 +453,7 @@ class PhotoOrganizerGUI(QWidget):
         directory = QFileDialog.getExistingDirectory(self, "Select Trash Directory", default_dir, QFileDialog.Option.ShowDirsOnly)
         if directory:
             self.trash_line_edit.setText(directory)
-            self.settings.setValue("trash_directory", directory)
+            self.settings.setValue("trash_dir", directory)
             logging.info(f"Trash Directory set to: {directory}")
             self.log_text_edit.append(f"Trash Directory set to: {directory}")
 
@@ -596,6 +604,7 @@ class PhotoOrganizerGUI(QWidget):
             'include_png': self.settings.value('include_png', True, type=bool),
             'include_mp4': self.settings.value('include_mp4', True, type=bool),
             'include_mov': self.settings.value('include_mov', True, type=bool),
+            'include_heic': self.settings.value('include_heic', False, type=bool),
             'naming_convention': self.settings.value('naming_convention', 'Date_Location')
         }
         return settings

@@ -1,43 +1,20 @@
 # main.py
 
-"""
-main.py
-
-Backend module for the Photo and Video Organizer program. It orchestrates the workflow by
-utilizing functions from various modules to extract metadata, detect duplicates,
-organize files, and handle videos. This module is designed to be imported by the GUI
-and does not execute any actions on its own.
-
-Functions:
-- organize_media(input_dir, output_dir, trash_dir, log_callback=None, settings=None): Organizes media files based on metadata, handling duplicates, and renaming.
-"""
-
 import os
 import logging
 from modules.duplicate_detector import is_duplicate, handle_duplicate
 from modules.metadata_extractor import extract_image_metadata
 from modules.geolocation_mapper import reverse_geocode
 from modules.file_organizer import rename_and_organize
-from modules.video_handler import process_video  # Assuming you have this module
+from modules.video_handler import process_video
+import pillow_heif  # Ensure HEIC support is registered
 
+# Register HEIC opener with Pillow for handling HEIC files
+pillow_heif.register_heif_opener()
 
 def organize_media(input_dir, output_dir, trash_dir, log_callback=None, settings=None, progress_callback=None, status_callback=None, pause_event=None, cancel_event=None):
     """
     Organizes media files from input_dir to output_dir, moving duplicates to trash_dir.
-
-    Parameters:
-    - input_dir (str): Path to the input media directory.
-    - output_dir (str): Path to the output directory where organized media will be stored.
-    - trash_dir (str): Path to the trash directory where duplicate files will be moved.
-    - log_callback (function, optional): Function to call for logging messages.
-    - settings (dict, optional): Dictionary containing user-defined settings.
-    - progress_callback (function, optional): Function to call to update progress percentage.
-    - status_callback (function, optional): Function to call to update status messages.
-    - pause_event (threading.Event, optional): Event to control pausing.
-    - cancel_event (threading.Event, optional): Event to control cancellation.
-
-    Returns:
-    - None
     """
     try:
         logging.info(f"Starting organization: Input - {input_dir}, Output - {output_dir}, Trash - {trash_dir}")
@@ -90,7 +67,8 @@ def organize_media(input_dir, output_dir, trash_dir, log_callback=None, settings
                         log_callback(f"Duplicate moved to trash: {file_path}")
                     continue
 
-                if ext.endswith(('.jpg', '.jpeg', '.png', '.tiff', '.bmp')):
+                # Supported image formats including HEIC
+                if ext.endswith(('.jpg', '.jpeg', '.png', '.tiff', '.bmp', '.heic')):
                     # Process image
                     metadata = extract_image_metadata(file_path, settings)
                     if metadata is None:
@@ -100,9 +78,15 @@ def organize_media(input_dir, output_dir, trash_dir, log_callback=None, settings
                         continue
                     timestamp = metadata.get('timestamp')
                     gps_data = metadata.get('gps')
-                    location = reverse_geocode(gps_data)
+                    location_str, location_found = reverse_geocode(gps_data)
 
-                    new_file_path = rename_and_organize(file_path, timestamp, location, output_dir, settings)
+                    # Log based on geolocation result
+                    if location_found:
+                        logging.info(f"Location found: {location_str}")
+                    else:
+                        logging.warning(f"Location not found for GPS data in file: {file_path}")
+
+                    new_file_path = rename_and_organize(file_path, timestamp, location_str, location_found, output_dir, settings)
                     if new_file_path:
                         logging.info(f"Image processed: {new_file_path}")
                         if log_callback:

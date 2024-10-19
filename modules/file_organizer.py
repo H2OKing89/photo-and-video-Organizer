@@ -1,36 +1,14 @@
 # modules/file_organizer.py
 
-"""
-file_organizer.py
-
-This module handles the renaming and organizing of media files based on
-their metadata, such as timestamps and location. It structures the
-organized files into directories by year and month.
-
-Functions:
-- rename_and_organize(file_path, timestamp, location, output_dir, settings): Renames and moves the file to the appropriate directory based on settings.
-"""
-
 import os
 import shutil
 from datetime import datetime
 from pathlib import Path
 import logging
 
-
-def rename_and_organize(file_path, timestamp, location, output_dir, settings):
+def rename_and_organize(file_path, timestamp, location, location_found, output_dir, settings):
     """
     Renames and moves a media file based on its timestamp and location according to user settings.
-
-    Parameters:
-    - file_path (str): Path to the media file.
-    - timestamp (str or None): The timestamp extracted from metadata.
-    - location (str or None): The human-readable location extracted from GPS data.
-    - output_dir (str): Base directory where organized media will be stored.
-    - settings (dict): User-defined settings for naming conventions.
-
-    Returns:
-    - str or None: The new file path if successful, else None.
     """
     try:
         if timestamp:
@@ -60,6 +38,13 @@ def rename_and_organize(file_path, timestamp, location, output_dir, settings):
             new_filename = f"{date_str}{Path(file_path).suffix}"
         elif naming_convention == 'Location':
             new_filename = f"{location_str}{Path(file_path).suffix}"
+        elif naming_convention == 'Dynamic':
+            # In Dynamic mode, prioritize location if found, else use full address
+            if location_found:
+                new_filename = f"{date_str}_{location_str}{Path(file_path).suffix}"
+            else:
+                # Use full address or default to Unknown_Location
+                new_filename = f"{date_str}_Unknown_Location{Path(file_path).suffix}"
         else:
             new_filename = f"{date_str}_{location_str}{Path(file_path).suffix}"  # Default
 
@@ -68,6 +53,7 @@ def rename_and_organize(file_path, timestamp, location, output_dir, settings):
         # Move and rename the file
         shutil.move(file_path, new_file_path)
         logging.info(f"File moved and renamed to: {new_file_path}")
+
         return new_file_path
     except Exception as e:
         logging.error(f"Error organizing file {file_path}: {e}")
